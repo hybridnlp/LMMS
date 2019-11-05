@@ -61,12 +61,10 @@ def tokenize_tail_wstok(encoder, wstok):
         return tokenize(encoder, wstok)
 
 ### basic encoding
-def pad_encode(encoder, text, max_length=None):
+def pad_encode(encoder, text, max_length):
   """creates token ids of a uniform sequence length for a given sentence"""
   tokenizer = encoder.tokenizer
   has_spec_toks = True if not hasattr(encoder, 'sent_special_tokens') else len(encoder.sent_special_tokens) > 0
-  if max_length is None:
-      max_length = encoder.encoder_config.get('max_seq_len', 512)
   # TODO can we use tokenizer.encode(text, add_special_tokens=True, max_length=max_length) ?
   
   tok_ids = tokenizer.convert_tokens_to_ids(tokenize(encoder, text))
@@ -96,7 +94,11 @@ def pad_encode(encoder, text, max_length=None):
 
 def calc_max_len(encoder, sents):
   tokenizer = encoder.tokenizer
-  return max([len(tokenize(encoder, text)) for text in sents])
+  maxlen = max([len(tokenize(encoder, text)) for text in sents])
+  if maxlen is None:
+    maxlen = encoder.encoder_config.get('max_seq_len', 512)
+  else:
+    maxlen = min(maxlen, encoder.encoder_config.get('max_seq_len', 512))
 
 
 def tokenize_batch(encoder, sents):
@@ -106,6 +108,7 @@ def tokenize_batch(encoder, sents):
   """
   assert type(sents) == list
   maxlen = calc_max_len(encoder, sents)
+
   padded_tok_ids = [pad_encode(encoder, s, maxlen)[0] for s in sents]
   att_masks = [pad_encode(encoder, s)[1] for s in sents]
   input_ids = torch.tensor(padded_tok_ids)
