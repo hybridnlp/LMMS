@@ -141,7 +141,7 @@ def insert_in_sized_batch(sent_entry, sized_batches, sentence_encoder):
 
 
 def train_optimized(train_path, eval_path, sentence_encoder, max_instances=float('inf')):
-    """Optimized version of `train`, only works for pytorch-transformer backend
+    """Optimized version of `train`, only works for transformers backend
     The optimization consists in creating batches of similar lengths to avoid having to 
     extract senses for a short sentence using `seq-len` 512.
     bert-as-service won't work for this because you'd need to restart the server before
@@ -268,7 +268,7 @@ def build_encoder(args):
     if backend == 'bert-as-service':
         from bert_as_service import BertServiceSentenceEncoder
         return BertServiceSentenceEncoder(enc_cfg)
-    elif backend == 'pytorch-transformer':
+    elif backend == 'transformers':
         return TransformerSentenceEncoder(enc_cfg)
     else:
         raise NotImplementedError("backend " + backend)
@@ -305,11 +305,11 @@ def run_train(args):
                        sentence_encoder,
                        batch_size=args.batch_size,
                        max_instances=args.max_instances)
-    elif args.backend == 'pytorch-transformer':
+    elif args.backend == 'transformers':
         sense_vecs = train_optimized(train_path, keys_path, 
                                      sentence_encoder, 
                                      max_instances=args.max_instances)
-        
+
     sep = ' '
     if args.out_path.endswith('.tsv'):
         sep='\t'
@@ -337,9 +337,9 @@ if __name__ == '__main__':
     parser.add_argument('-backend', type=str, default='bert-as-service',
                         help='Underlying BERT model provider',
                         required=False,
-                        choices=['bert-as-service', 'pytorch-transformer'])
+                        choices=['bert-as-service', 'transformers'])
     parser.add_argument('-pytorch_model', type=str, default='bert-large-cased',
-                        help='Pre-trained pytorch transformer name or path',
+                        help='Pre-trained transformer name or path',
                         required=False)
     args = parser.parse_args()
     run_train(args)

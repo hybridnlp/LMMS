@@ -92,7 +92,7 @@ $ wget http://lcl.uniroma1.it/wsdeval/data/WSD_Evaluation_Framework.zip
 $ unzip WSD_Evaluation_Framework.zip
 ```
 
-### Using `bert-as-service` back-end (**Not recommended**, use transformer backend instead)
+### Using `bert-as-service` back-end (**Not recommended**, use `transformers` backend instead)
 
 One of our main dependencies is [bert-as-service](https://github.com/hanxiao/bert-as-service), which we use to retrieve BERT embeddings from a separate process (server/client mode) so that BERT doesn't need to be reloaded with each script. It also includes additional features over other BERT wrappers for improved performance at scale. The client and server packages should have been installed by the previous `pip install' command, so now we need start the server with our parameters before training or running experiments.
 
@@ -146,7 +146,7 @@ usage: train.py [-h] [-wsd_fw_path WSD_FW_PATH]
                 [-max_seq_len MAX_SEQ_LEN] [-merge_strategy {mean,first,sum}]
                 [-max_instances MAX_INSTANCES] -out_path OUT_PATH
                 [-pooling_layer POOLING_LAYER [POOLING_LAYER ...]]
-                [-backend {bert-as-service,pytorch-transformer}]
+                [-backend {bert-as-service,transformers}]
                 [-pytorch_model PYTORCH_MODEL]
 
 Create Initial Sense Embeddings.
@@ -171,7 +171,7 @@ optional arguments:
   -pooling_layer POOLING_LAYER [POOLING_LAYER ...]
                         Which layers in the model to take for subtoken
                         embeddings (default: [-4, -3, -2, -1])
-  -backend {bert-as-service,pytorch-transformer}
+  -backend {bert-as-service,transformers}
                         Underlying BERT model provider (default: bert-as-
                         service)
   -pytorch_model PYTORCH_MODEL
@@ -183,7 +183,7 @@ optional arguments:
 To replicate using `transformers` backend (**recommended**, although not exactly same as LMMS):
 
 ```bash
-$ python train.py -dataset semcor -backend pytorch-transformer -batch_size 32 -max_seq_len 512 -out_path data/vectors/semcor.txt
+$ python train.py -dataset semcor -backend transformers -batch_size 32 -max_seq_len 512 -out_path data/vectors/semcor.txt
 ```
 
 This will create, after a while, the following files in the output folder:
@@ -369,7 +369,7 @@ usage: eval_nn.py [-h] -sv_path SV_PATH [-ft_path FT_PATH]
 				  [-min_seq_len MIN_SEQ_LEN] [-max_seq_len MAX_SEQ_LEN]
                   [-batch_size BATCH_SIZE] [-merge_strategy MERGE_STRATEGY]
                   [-ignore_lemma] [-ignore_pos] [-thresh THRESH] [-k K]
-                  [-backend {bert-as-service, pytorch-transformer}]
+                  [-backend {bert-as-service, transformers}]
                   [-pytorch_model PYTORCH_MODEL]
                   [-pooling_layer POOLING_LAYER [POOLING_LAYER ...]] [-quiet]
 
@@ -395,7 +395,7 @@ optional arguments:
   -ignore_pos           Ignore POS features (default: True)
   -thresh THRESH        Similarity threshold (default: -1)
   -k K                  Number of Neighbors to accept (default: 1)
-  -backend {bert-as-service,pytorch-transformer}
+  -backend {bert-as-service,transformers}
                         Underlying BERT model provider (default: bert-as-
                         service)
   -pytorch_model PYTORCH_MODEL
@@ -407,11 +407,11 @@ optional arguments:
   -quiet                Less verbose (debug=False) (default: True)
 ```
 
-To replicate using `transformer` backend:
+To replicate using `transformers` backend:
 
 ```bash
 $ python eval_nn.py \
-  - backend pytorch-transformer \
+  - backend transformers \
   -sv_path data/vectors/lmms_1024.bert-large-cased.txt \
   -test_set ALL
 ``

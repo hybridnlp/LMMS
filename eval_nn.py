@@ -142,7 +142,7 @@ def build_encoder(args):
     if backend == 'bert-as-service':
         from bert_as_service import BertServiceSentenceEncoder
         return BertServiceSentenceEncoder(enc_cfg)
-    elif backend == 'pytorch-transformer':
+    elif backend == 'transformer':
         return TransformerSentenceEncoder(enc_cfg)
     else:
         raise NotImplementedError("backend " + backend)
@@ -349,7 +349,7 @@ def eval_batch(batch, sentence_encoder, debugs_f, senses_vsm, args, ft_model):
     for sent_info, sent_bert in zip(batch, batch_bert):
         debugs_f.write('%s' % sent_info['tokenized_sentence'])
         idx_map_abs = sent_info['idx_map_abs']
-    
+
         for mw_idx, tok_idxs in idx_map_abs:
             yield eval_mwtok(sent_info, mw_idx, tok_idxs, sent_bert, 
                senses_vsm, args, ft_model)
@@ -445,12 +445,12 @@ if __name__ == '__main__':
     parser.add_argument('-ignore_pos', dest='use_pos', action='store_false', help='Ignore POS features', required=False)
     parser.add_argument('-thresh', type=float, default=-1, help='Similarity threshold', required=False)
     parser.add_argument('-k', type=int, default=1, help='Number of Neighbors to accept', required=False)
-    parser.add_argument('-backend', type=str, default='bert-as-service', 
-                        help='Underlying BERT model provider', 
+    parser.add_argument('-backend', type=str, default='bert-as-service',
+                        help='Underlying BERT model provider',
                         required=False,
-                        choices=['bert-as-service', 'pytorch-transformer'])
-    parser.add_argument('-pytorch_model', type=str, default='bert-large-cased', 
-                        help='Pre-trained pytorch transformer name or path', 
+                        choices=['bert-as-service', 'transformers'])
+    parser.add_argument('-pytorch_model', type=str, default='bert-large-cased',
+                        help='Pre-trained transformer name or path',
                         required=False)
     parser.add_argument('-pooling_layer', help='Which layers in the model to take for subtoken embeddings', default=[-4, -3, -2, -1], type=int, nargs='+')
     parser.add_argument('-quiet', dest='debug', action='store_false', help='Less verbose (debug=False)', required=False)
