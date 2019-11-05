@@ -50,14 +50,7 @@ To install additional packages used by this project run:
 pip install -r requirements.txt
 ```
 
-This will install the standard LMMS packages for bert-as-service, nltk and fastText.
-
-For Transigrafo, we also need pytorch and the huggingface transformers:
-
-```bash
-pip install torch torchvision
-pip install transformers
-```
+This will install the standard LMMS packages for bert-as-service, nltk, fastText, pytorch and the huggingface transformers library.
 
 The WordNet package for NLTK isn't installed by pip, but we can install it easily with:
 

@@ -61,11 +61,12 @@ def tokenize_tail_wstok(encoder, wstok):
         return tokenize(encoder, wstok)
 
 ### basic encoding
-def pad_encode(encoder, text):
+def pad_encode(encoder, text, max_length=None):
   """creates token ids of a uniform sequence length for a given sentence"""
   tokenizer = encoder.tokenizer
   has_spec_toks = True if not hasattr(encoder, 'sent_special_tokens') else len(encoder.sent_special_tokens) > 0
-  max_length = encoder.encoder_config.get('max_seq_len', 512)
+  if max_length is None:
+      max_length = encoder.encoder_config.get('max_seq_len', 512)
   # TODO can we use tokenizer.encode(text, add_special_tokens=True, max_length=max_length) ?
   
   tok_ids = tokenizer.convert_tokens_to_ids(tokenize(encoder, text))
@@ -92,13 +93,20 @@ def pad_encode(encoder, text):
   assert len(att_mask) == max_length
   return tok_ids2, att_mask
 
+
+def calc_max_len(ncoder, sents):
+  tokenizer = encoder.tokenizer
+  return max([len(tokenize(encoder, text)) for text in sents])
+
+
 def tokenize_batch(encoder, sents):
   """Produces a tensor of padded token ids for a given list of sentences
   Sentences may need to be padded or truncated, depending on the `max_seq_len`
   of the `encoder`.
   """
   assert type(sents) == list
-  padded_tok_ids = [pad_encode(encoder, s)[0] for s in sents]
+  maxlen = calc_max_len(encoder, sents)
+  padded_tok_ids = [pad_encode(encoder, s, maxlen)[0] for s in sents]
   att_masks = [pad_encode(encoder, s)[1] for s in sents]
   input_ids = torch.tensor(padded_tok_ids)
   att_masks = torch.tensor(att_masks)
@@ -187,7 +195,7 @@ def simple_batch_encode(encoder, sents):
     `(len(sents), emb_dim)` when `pooling_strategy` was something else
   """
   input_ids, att_masks = tokenize_batch(encoder, sents)
-    
+
   model = encoder.model
   model.eval() # needed to deactivate any Dropout layers
 
