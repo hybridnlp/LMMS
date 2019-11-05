@@ -94,7 +94,7 @@ def pad_encode(encoder, text, max_length=None):
   return tok_ids2, att_mask
 
 
-def calc_max_len(ncoder, sents):
+def calc_max_len(encoder, sents):
   tokenizer = encoder.tokenizer
   return max([len(tokenize(encoder, text)) for text in sents])
 
