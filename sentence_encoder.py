@@ -94,7 +94,10 @@ def pad_encode(encoder, text, max_length):
 
 def calc_max_len(encoder, sents):
   tokenizer = encoder.tokenizer
-  maxlen = max([len(tokenize(encoder, text)) for text in sents])
+  num_spec_toks = 0
+  if hasattr(encoder, 'sent_special_tokens'):
+    num_spec_toks = len(encoder.sent_special_tokens)
+  maxlen = max([len(tokenize(encoder, text)) for text in sents]) + num_spec_toks
   if maxlen is None:
     maxlen = encoder.encoder_config.get('max_seq_len', 512)
   else:
