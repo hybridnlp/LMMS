@@ -99,6 +99,7 @@ def calc_max_len(encoder, sents):
     maxlen = encoder.encoder_config.get('max_seq_len', 512)
   else:
     maxlen = min(maxlen, encoder.encoder_config.get('max_seq_len', 512))
+  return maxlen
 
 
 def tokenize_batch(encoder, sents):
