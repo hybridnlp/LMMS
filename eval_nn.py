@@ -142,7 +142,7 @@ def build_encoder(args):
     if backend == 'bert-as-service':
         from bert_as_service import BertServiceSentenceEncoder
         return BertServiceSentenceEncoder(enc_cfg)
-    elif backend == 'transformer':
+    elif backend == 'transformers':
         return TransformerSentenceEncoder(enc_cfg)
     else:
         raise NotImplementedError("backend " + backend)

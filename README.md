@@ -330,6 +330,13 @@ $ python concat.py -v1_path data/vectors/wn_glosses.txt -v2_path data/vectors/se
 
 Run the commands below to replicate these results with [pretrained embeddings](#download-sense-embeddings).
 
+To get the official scores for wsd-eval, you need to compile the official Scorer (you'll need a jdk to be installed on your machine):
+
+```bash
+$ cd external/wsd_eval/WSD_Evaluation_Framework/Evaluation_Datasets
+$ javac Scorer.java
+```
+
 ### Baseline - Most Frequent Sense
 
 Usage description.

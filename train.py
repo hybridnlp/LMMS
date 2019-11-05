@@ -55,11 +55,14 @@ def read_xml_sentence(xml_sentence, sense_mapping):
     entry['sentence'] = ' '.join([t for t in entry['token_mw']])
     entry['idx_map_abs'] = mwtok.calc_idx_map_abs(entry['token_mw'])
     return entry
+
+
 def get_sentence_entry_generator(train_path, eval_path):
     assert train_path.endswith('data.xml')
     sense_mapping = get_sense_mapping(eval_path)
+
     def sent_et_as_entry(sent_et):
-		return read_xml_sentence(sent_et, sense_mapping)
+        return read_xml_sentence(sent_et, sense_mapping)
     return read_xml_sents(train_path, as_entry_fn=sent_et_as_entry)
 
 
