@@ -65,16 +65,7 @@ def wn_all_lexnames_groups():
         groups[synset.lexname()].append(synset)
     return dict(groups)
 
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Propagates supervised sense embeddings through WordNet.')
-    parser.add_argument('-sup_sv_path', help='Path to supervised sense vectors', required=True)
-    parser.add_argument('-ext_mode', default='lexname', help='Max abstraction level', required=False,
-                        choices=['synset', 'hypernym', 'lexname'])
-    parser.add_argument('-out_path', help='Path to resulting extended vector set', required=True)
-    args = parser.parse_args()
-
+def run_extend(args):
     logging.info('Loading SensesVSM ...')
     senses_vsm = SensesVSM(args.sup_sv_path, normalize=False)
 
@@ -172,3 +163,16 @@ if __name__ == '__main__':
         for sensekey, vec in additional_vecs.items():
             vec_str = ' '.join([str(round(v, 6)) for v in vec.tolist()])
             extended_f.write('%s %s\n' % (sensekey, vec_str))
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Propagates supervised sense embeddings through WordNet.')
+    parser.add_argument('-sup_sv_path', help='Path to supervised sense vectors', required=True)
+    parser.add_argument('-ext_mode', default='lexname', help='Max abstraction level', required=False,
+                        choices=['synset', 'hypernym', 'lexname'])
+    parser.add_argument('-out_path', help='Path to resulting extended vector set', required=True)
+    args = parser.parse_args()
+    run_extend(args)
+    
+    

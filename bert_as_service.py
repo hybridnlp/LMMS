@@ -2,16 +2,15 @@ import numpy as np
 
 import bert_tokenization
 from bert_serving.client import BertClient
+from sentence_encoder import SentenceEncoder
 
 
 BERT_BASE_DIR = 'external/bert/cased_L-24_H-1024_A-16/'
 tokenizer = bert_tokenization.FullTokenizer(vocab_file=BERT_BASE_DIR+'vocab.txt',
                                             do_lower_case=False)
 
-bc = BertClient()
 
-
-def bert_embed(sents, merge_subtokens=True, merge_strategy='first'):
+def bert_embed(bc, sents, merge_subtokens=True, merge_strategy='first'):
     sents_encodings_full = bc.encode(sents)
     sents_tokenized = [tokenizer.tokenize(s) for s in sents]
 
@@ -56,12 +55,12 @@ def bert_embed(sents, merge_subtokens=True, merge_strategy='first'):
 
             sents_encodings_merged.append(sent_tokens_vecs)
 
-        sent_encodings = sents_encodings_merged
+        sents_encodings = sents_encodings_merged
 
-    return sent_encodings
+    return sents_encodings
 
 
-def bert_embed_sents(sents, strategy='CLS_TOKEN'):
+def bert_embed_sents(bc, sents, strategy='CLS_TOKEN'):
     sents_encodings_full = bc.encode(sents)
     sents_encodings = []
     for sent, sent_vec in zip(sents, sents_encodings_full):
@@ -70,3 +69,12 @@ def bert_embed_sents(sents, strategy='CLS_TOKEN'):
         sents_encodings.append((sent, layers_sum))
 
     return sents_encodings
+
+class BertServiceSentenceEncoder(SentenceEncoder):
+    def __init__(self, encoder_config):
+        super(BertServiceSentenceEncoder, self).__init__(encoder_config)
+        self.bc = BertClient()
+        
+    def token_embeddings(self, sents, return_ws_tokens=True):
+        return bert_embed(self.bc, sents, merge_subtokens=return_ws_tokens,
+                      merge_strategy=self.encoder_config.get('tok_merge_strategy', 'mean'))

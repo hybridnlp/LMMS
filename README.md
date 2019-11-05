@@ -1,6 +1,18 @@
-# Language Modelling Makes Sense (ACL 2019)
+# Transigrafo: Transformer-based sense embeddings
 
-This repository includes the code to replicate the experiments in the ["Language Modelling Makes Sense (ACL 2019)"](https://arxiv.org/abs/1906.10007) paper.
+This is a fork/extension of the code for 
+`Language Modelling Makes Sense (ACL 2019)`
+
+The main modifications include:
+* support for [transformers](https://github.com/huggingface/transformers) backend 
+** this makes it possible to experiment with other transformer architectures besides BERT, e.g. XLNet, XLM, RoBERTa
+** optimised training since we no longer have to pad sequences to 512 wordpiece tokens
+* Introduced `SentenceEncoder` which is an experimental generalisation of bert-as-service like encoding services using the transformers backend
+** allows to extract various types of embeddings from a single execution of a batch of sequences
+* rolling cosine similarity metrics during training phase
+
+The original repository includes the code to replicate the experiments in the ["Language Modelling Makes Sense (ACL 2019)"](https://arxiv.org/abs/1906.10007) paper.
+
 
 This project is designed to be modular so that others can easily modify or reuse the portions that are relevant for them. Its composed of a series of scripts that when run in sequence produce most of the work described in the paper (for simplicity, we've focused this release on BERT, let us know if you need ELMo).
 
@@ -23,7 +35,7 @@ This project was developed on Python 3.6.5 from Anaconda distribution v4.6.2. As
 After cloning the repository, we recommend creating and activating a new environment to avoid any conflicts with existing installations in your system:
 
 ```bash
-$ git clone https://github.com/danlou/LMMS.git
+$ git clone https://github.com/rdenaux/LMMS.git
 $ cd LMMS
 $ conda create -n LMMS python=3.6.5
 $ conda activate LMMS
@@ -38,6 +50,15 @@ To install additional packages used by this project run:
 pip install -r requirements.txt
 ```
 
+This will install the standard LMMS packages for bert-as-service, nltk and fastText.
+
+For Transigrafo, we also need pytorch and the huggingface transformers:
+
+```bash
+pip install torch torchvision
+pip install transformers
+```
+
 The WordNet package for NLTK isn't installed by pip, but we can install it easily with:
 
 ```bash
@@ -46,7 +67,7 @@ $ python -c "import nltk; nltk.download('wordnet')"
 
 ### External Data
 
-Download pretrained BERT (large-cased)
+If you want to use bert-as-service backend, you need to download pretrained BERT (large-cased). If using `transformers` backend, it will download the model during execution into a cache folder, so you can skip this step.
 
 ```bash
 $ cd external/bert  # from repo home
@@ -62,15 +83,16 @@ $ wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-sub
 $ unzip crawl-300d-2M-subword.zip
 ```
 
-If you want to evaluate the sense embeddings on WSD, you need the [WSD Evaluation Framework](http://lcl.uniroma1.it/wsdeval/).
+If you want to evaluate the sense embeddings on WSD, you need the [WSD Evaluation Framework](http://lcl.uniroma1.it/wsdeval/). 
 
 ```bash
-$ cd external/wsd_eval  # from repo home
+$ mkdir external/wsd_eval # from repo home
+$ cd external/wsd_eval
 $ wget http://lcl.uniroma1.it/wsdeval/data/WSD_Evaluation_Framework.zip
 $ unzip WSD_Evaluation_Framework.zip
 ```
 
-### Loading BERT
+### Using `bert-as-service` back-end (**Not recommended**, use transformer backend instead)
 
 One of our main dependencies is [bert-as-service](https://github.com/hanxiao/bert-as-service), which we use to retrieve BERT embeddings from a separate process (server/client mode) so that BERT doesn't need to be reloaded with each script. It also includes additional features over other BERT wrappers for improved performance at scale. The client and server packages should have been installed by the previous `pip install' command, so now we need start the server with our parameters before training or running experiments.
 
@@ -123,6 +145,9 @@ usage: train.py [-h] [-wsd_fw_path WSD_FW_PATH]
                 [-dataset {semcor,semcor_omsti}] [-batch_size BATCH_SIZE]
                 [-max_seq_len MAX_SEQ_LEN] [-merge_strategy {mean,first,sum}]
                 [-max_instances MAX_INSTANCES] -out_path OUT_PATH
+                [-pooling_layer POOLING_LAYER [POOLING_LAYER ...]]
+                [-backend {bert-as-service,pytorch-transformer}]
+                [-pytorch_model PYTORCH_MODEL]
 
 Create Initial Sense Embeddings.
 
@@ -134,6 +159,8 @@ optional arguments:
                         Name of dataset (default: semcor)
   -batch_size BATCH_SIZE
                         Batch size (BERT) (default: 32)
+  -min_seq_len MIN_SEQ_LEN
+                        Minimum sequence length (BERT) (default: 3)
   -max_seq_len MAX_SEQ_LEN
                         Maximum sequence length (BERT) (default: 512)
   -merge_strategy {mean,first,sum}
@@ -141,15 +168,37 @@ optional arguments:
   -max_instances MAX_INSTANCES
                         Maximum number of examples for each sense (default: inf)
   -out_path OUT_PATH    Path to resulting vector set (default: None)
+  -pooling_layer POOLING_LAYER [POOLING_LAYER ...]
+                        Which layers in the model to take for subtoken
+                        embeddings (default: [-4, -3, -2, -1])
+  -backend {bert-as-service,pytorch-transformer}
+                        Underlying BERT model provider (default: bert-as-
+                        service)
+  -pytorch_model PYTORCH_MODEL
+                        Pre-trained pytorch transformer name or path (default:
+                        bert-large-cased))
 ```
 
-To replicate, use as follows:
+
+To replicate using `transformers` backend (**recommended**, although not exactly same as LMMS):
+
+```bash
+$ python train.py -dataset semcor -backend pytorch-transformer -batch_size 32 -max_seq_len 512 -out_path data/vectors/semcor.txt
+```
+
+This will create, after a while, the following files in the output folder:
+* `semcor..3-512.vecs.txt` for each sense the computed embedding
+* `semcor..3-512.counts.txt` for each sense, how often did it occur in the training corpus
+* `semcor..3-512.rolling_cosims.txt` for each sense, a sequence of cosims between the current average emb and the next occurrence in the training corpus
+* `lmms_config.json` a record of the args used during training
+
+To replicate using `bert-as-service` (**not recommended** as you need to launch it separately) and use as follows (note that you need to create the folders in advance, as we do not do this for you):
 
 ```bash
 $ python train.py -dataset semcor -batch_size 32 -max_seq_len 512 -out_path data/vectors/semcor.32.512.txt
 ```
 
-### 2. [extend.py](https://github.com/danlou/LMMS/blob/master/extend.py) - Propagate supervised representations (sense embeddings) through WordNet
+### 2. [extend.py](https://github.com/rdenaux/LMMS/blob/master/extend.py) - Propagate supervised representations (sense embeddings) through WordNet
 
 Usage description.
 
@@ -317,9 +366,12 @@ $ python eval_nn.py -h
 usage: eval_nn.py [-h] -sv_path SV_PATH [-ft_path FT_PATH]
                   [-wsd_fw_path WSD_FW_PATH]
                   [-test_set {senseval2,senseval3,semeval2007,semeval2013,semeval2015,ALL}]
+				  [-min_seq_len MIN_SEQ_LEN] [-max_seq_len MAX_SEQ_LEN]
                   [-batch_size BATCH_SIZE] [-merge_strategy MERGE_STRATEGY]
                   [-ignore_lemma] [-ignore_pos] [-thresh THRESH] [-k K]
-                  [-quiet]
+                  [-backend {bert-as-service, pytorch-transformer}]
+                  [-pytorch_model PYTORCH_MODEL]
+                  [-pooling_layer POOLING_LAYER [POOLING_LAYER ...]] [-quiet]
 
 Nearest Neighbors WSD Evaluation.
 
@@ -331,6 +383,10 @@ optional arguments:
                         Path to WSD Evaluation Framework (default: external/wsd_eval/WSD_Evaluation_Framework/)
   -test_set {senseval2,senseval3,semeval2007,semeval2013,semeval2015,ALL}
                         Name of test set (default: ALL)
+  -min_seq_len MIN_SEQ_LEN
+                        Minimum sequence length (BERT) (default: 3)
+  -max_seq_len MAX_SEQ_LEN
+                        Maximum sequence length (BERT) (default: 512)
   -batch_size BATCH_SIZE
                         Batch size (BERT) (default: 32)
   -merge_strategy MERGE_STRATEGY
@@ -339,10 +395,28 @@ optional arguments:
   -ignore_pos           Ignore POS features (default: True)
   -thresh THRESH        Similarity threshold (default: -1)
   -k K                  Number of Neighbors to accept (default: 1)
+  -backend {bert-as-service,pytorch-transformer}
+                        Underlying BERT model provider (default: bert-as-
+                        service)
+  -pytorch_model PYTORCH_MODEL
+                        Pre-trained pytorch transformer name or path (default:
+                        bert-large-cased)
+  -pooling_layer POOLING_LAYER [POOLING_LAYER ...]
+                        Which layers in the model to take for subtoken
+                        embeddings (default: [-4, -3, -2, -1])
   -quiet                Less verbose (debug=False) (default: True)
 ```
 
-To replicate, use as follows:
+To replicate using `transformer` backend:
+
+```bash
+$ python eval_nn.py \
+  - backend pytorch-transformer \
+  -sv_path data/vectors/lmms_1024.bert-large-cased.txt \
+  -test_set ALL
+``
+
+To replicate LMMS using `bert-as-service` (**not recommended**), use as follows:
 
 ```bash
 $ python eval_nn.py -sv_path data/vectors/lmms_1024.bert-large-cased.npz -test_set ALL
