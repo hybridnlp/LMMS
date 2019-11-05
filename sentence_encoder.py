@@ -110,7 +110,7 @@ def tokenize_batch(encoder, sents):
   maxlen = calc_max_len(encoder, sents)
 
   padded_tok_ids = [pad_encode(encoder, s, maxlen)[0] for s in sents]
-  att_masks = [pad_encode(encoder, s)[1] for s in sents]
+  att_masks = [pad_encode(encoder, s, maxlen)[1] for s in sents]
   input_ids = torch.tensor(padded_tok_ids)
   att_masks = torch.tensor(att_masks)
   #logging.info("Input batch %s " % str(input_ids.shape))
