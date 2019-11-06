@@ -362,7 +362,7 @@ def run_eval(args):
     Load fastText static embeddings if required.
     """
     logging.info('Loading SensesVSM ...')
-    if args.sv_path.endswith('.txt'):
+    if args.sv_path.endswith('.txt') or args.sv_path.endswith('.npz'):
         senses_vsm = SensesVSM(args.sv_path, normalize=True)
     else:
         raise ValueError("" + args.sv_path)
