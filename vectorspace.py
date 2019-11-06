@@ -5,6 +5,8 @@ from collections import defaultdict
 import numpy as np
 from nltk.corpus import wordnet as wn
 
+import pickle
+
 
 def get_sk_type(sensekey):
     return int(sensekey.split('%')[1].split(':')[0])
@@ -60,9 +62,11 @@ class SensesVSM(object):
         self.ndims = self.vectors.shape[1]
 
     def load_npz(self, npz_vecs_path):
-        loader = np.load(npz_vecs_path)
-        self.labels = loader['labels'].tolist()
-        self.vectors = loader['vectors']
+        with open(npz_vecs_path, 'rb') as f:
+            loader = pickle.load(f)
+        
+        self.labels = list(loader.keys())
+        self.vectors = np.array(list(loader.values()))
 
         self.labels_set = set(self.labels)
         self.indices = {l: i for i, l in enumerate(self.labels)}
