@@ -280,6 +280,9 @@ def dataset_paths(dataset_name):
     if dataset_name == 'semcor':
         train_path = args.wsd_fw_path + 'Training_Corpora/SemCor/semcor.data.xml'
         keys_path = args.wsd_fw_path + 'Training_Corpora/SemCor/semcor.gold.key.txt'
+    elif dataset_name == 'semcor_test':
+        train_path = args.wsd_fw_path + 'Evaluation_Datasets/ALL/ALL.data.xml'
+        keys_path = args.wsd_fw_path + 'Evaluation_Datasets/ALL/ALL.gold.key.txt'
     elif dataset_name == 'semcor_tlgs':
         train_path = args.wsd_fw_path + 'Training_Corpora/SemCor/semcor_14.2_tlgs'
         keys_path = None
@@ -328,7 +331,7 @@ if __name__ == '__main__':
     parser.add_argument('-wsd_fw_path', help='Path to WSD Evaluation Framework', required=False,
                         default='external/wsd_eval/WSD_Evaluation_Framework/')
     parser.add_argument('-dataset', default='semcor', help='Name of dataset', required=False,
-                        choices=['semcor', 'semcor_omsti'])
+                        choices=['semcor', 'semcor_test', 'semcor_omsti'])
     parser.add_argument('-batch_size', type=int, default=32, help='Batch size (BERT)', required=False)
     parser.add_argument('-min_seq_len', type=int, default=3, help='Minimum sequence length (BERT)', required=False)
     parser.add_argument('-max_seq_len', type=int, default=512, help='Maximum sequence length (BERT)', required=False)
