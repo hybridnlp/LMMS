@@ -8,6 +8,7 @@ from nltk.corpus import wordnet as wn
 
 from vectorspace import SensesVSM
 
+import pickle 
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -154,15 +155,26 @@ def run_extend(args):
     logging.info('n_vecs: %d - %d' % (n_vecs, n_total_senses))
     logging.info('Coverage: %f' % (n_vecs/n_total_senses))
 
-    with open(args.out_path, 'w') as extended_f:
+    if args.out_path.endswith(".txt"):
+        with open(args.out_path, 'w') as extended_f:
+            with open(args.sup_sv_path) as supervised_f:
+                for line in supervised_f:
+                    extended_f.write(line)
 
+            for sensekey, vec in additional_vecs.items():
+                vec_str = ' '.join([str(round(v, 6)) for v in vec.tolist()])
+                extended_f.write('%s %s\n' % (sensekey, vec_str))
+    
+    elif args.out_path.endswith(".npz"):
+        final_emb = {}
         with open(args.sup_sv_path) as supervised_f:
             for line in supervised_f:
-                extended_f.write(line)
-
+                final_emb[line.split()[0]]=np.array(line.split()[1:])
+          
         for sensekey, vec in additional_vecs.items():
-            vec_str = ' '.join([str(round(v, 6)) for v in vec.tolist()])
-            extended_f.write('%s %s\n' % (sensekey, vec_str))
+            final_emb[sensekey] = vec
+        with open(args.out_path, 'wb') as f:
+            pickle.dump(final_emb, f, pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == '__main__':
