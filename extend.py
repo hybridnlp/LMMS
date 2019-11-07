@@ -8,7 +8,6 @@ from nltk.corpus import wordnet as wn
 
 from vectorspace import SensesVSM
 
-import pickle 
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -166,16 +165,16 @@ def run_extend(args):
                 extended_f.write('%s %s\n' % (sensekey, vec_str))
     
     elif args.out_path.endswith(".npz"):
-        final_emb = {}
+        senses_list = []
+        vecs_list = []
         with open(args.sup_sv_path) as supervised_f:
             for line in supervised_f:
-                final_emb[line.split()[0]]=np.array(line.split()[1:])
-          
+                senses_list.append(line.split()[0])
+                vecs_list.append(np.array(line.split()[1:]).astype(np.float32))
         for sensekey, vec in additional_vecs.items():
-            final_emb[sensekey] = vec
-        with open(args.out_path, 'wb') as f:
-            pickle.dump(final_emb, f, pickle.HIGHEST_PROTOCOL)
-
+            senses_list.append(sensekey)
+            vecs_list.append(vec)
+        np.savez_compressed(args.out_path, labels=senses_list, vectors=vecs_list)
 
 if __name__ == '__main__':
 
@@ -186,5 +185,3 @@ if __name__ == '__main__':
     parser.add_argument('-out_path', help='Path to resulting extended vector set', required=True)
     args = parser.parse_args()
     run_extend(args)
-    
-    
